@@ -30,7 +30,7 @@ const TRAY_PRESETS = [
 const MENU_SECTIONS: MenuSection[] = [
   {
     id: "nim-baguette-section",
-    title: "نیم باگت",
+    title: "نان سفید",
     icon: "🥖",
     collapsible: true,
     items: [
@@ -44,6 +44,7 @@ const MENU_SECTIONS: MenuSection[] = [
       { id: "finger-food", name: "فینگر فود", emoji: "🍟" },
       { id: "sandwichi-mac", name: "ساندویچی مک", emoji: "🥪" },
       { id: "burger-mac", name: "برگر مک", emoji: "🍔" },
+      { id: "khamir-pizza", name: "خمیر پیتزا", emoji: "🍕" },
     ],
   },
   {
@@ -60,19 +61,9 @@ const MENU_SECTIONS: MenuSection[] = [
       { id: "hamburger-rogan", name: "همبرگر روگن", emoji: "🍔" },
       { id: "barbari-rogan", name: "بربری روگن", emoji: "🫓" },
       { id: "charki-chavdar", name: "چارکی چاودار", emoji: "🍞" },
-    ],
-  },
-  {
-    id: "nan-gerd-section",
-    title: "نان گرد",
-    icon: "🫓",
-    collapsible: true,
-    items: [
       { id: "super-siah", name: "سوپر سیاه", emoji: "🍞" },
       { id: "haft-giah", name: "هفت گیاه", emoji: "🌿" },
       { id: "bagel", name: "بیگل", emoji: "🥯" },
-      { id: "artisan", name: "آرتیزن", emoji: "🍞" },
-      { id: "asal-gerdoo", name: "عسل گردو", emoji: "🍯" },
     ],
   },
   {
@@ -101,16 +92,12 @@ const MENU_SECTIONS: MenuSection[] = [
   },
   {
     id: "pirashki-section",
-    title: "پیراشکی هات داگ",
+    title: "ساندویچ کوچک",
     icon: "🌭",
     collapsible: true,
     items: [
-      { id: "khamir-pizza", name: "خمیر پیتزا", emoji: "🍕" },
-      { id: "pirashki-hotdog", name: "پیراشکی هات داگ", emoji: "🌭" },
       { id: "beef-cheese", name: "بیف چیز", emoji: "🧀" },
       { id: "mazeh", name: "مزه", emoji: "🍽️" },
-      { id: "nan-sir", name: "نان سیر", emoji: "🧄" },
-      { id: "focaccia", name: "فوکاچیا", emoji: "🫓" },
     ],
   },
   {
@@ -157,7 +144,7 @@ const MENU_SECTIONS: MenuSection[] = [
   },
   {
     id: "misc-3-section",
-    title: "شیرینی",
+    title: "شیرینی خشک",
     icon: "🍪",
     collapsible: true,
     items: [
@@ -175,19 +162,22 @@ const MENU_SECTIONS: MenuSection[] = [
       { id: "lava", name: "لاوا", emoji: "🍫" },
       { id: "zaban", name: "زبان", emoji: "🍞" },
       { id: "ajma", name: "آجما/آچما", emoji: "🥐" },
-      { id: "sitrol-keshmeshi", name: "سیترول کشمشی", emoji: "🍇" },
       { id: "zaban-keshmeshi", name: "زبان کشمشی", emoji: "🍞" },
+      { id: "swissi-mrabai", name: "سوئیسی مربایی", emoji: "🍓", trayMode: true },
+      { id: "swissi-nutella", name: "سوئیسی نوتلایی", emoji: "🍫", trayMode: true },
+      { id: "mikado", name: "میکادو", emoji: "🍫", trayMode: true },
     ],
   },
   {
     id: "donut-section",
-    title: "دونات",
+    title: "پیراشکی (دونات)",
     icon: "🍩",
     collapsible: true,
     items: [
       { id: "donut-shekari", name: "دونات شکری", emoji: "🍩" },
       { id: "donut-kreamddar", name: "دونات کرمدار", emoji: "🍩" },
       { id: "donut-kakaoyi", name: "دونات کاکائویی", emoji: "🍩" },
+      { id: "pirashki-hotdog", name: "پیراشکی هات داگ", emoji: "🌭" },
     ],
   },
   {
@@ -200,6 +190,10 @@ const MENU_SECTIONS: MenuSection[] = [
       { id: "chiapata", name: "چیاپاتا", emoji: "🫓" },
       { id: "baguette-original", name: "باگت اورجینال", emoji: "🥖" },
       { id: "ekmak", name: "اکمک", emoji: "🍞" },
+      { id: "artisan", name: "آرتیزن", emoji: "🍞" },
+      { id: "asal-gerdoo", name: "عسل گردو", emoji: "🍯" },
+      { id: "nan-sir", name: "نان سیر", emoji: "🧄" },
+      { id: "focaccia", name: "فوکاچیا", emoji: "🫓" },
     ],
   },
   {
@@ -219,7 +213,7 @@ const MENU_SECTIONS: MenuSection[] = [
   },
   {
     id: "salad-section",
-    title: "سالاد سیردار",
+    title: "نان خشک",
     icon: "🥗",
     collapsible: true,
     items: [
@@ -230,6 +224,8 @@ const MENU_SECTIONS: MenuSection[] = [
       { id: "khoshk-tokhme", name: "خشک تخمه", emoji: "🌱" },
       { id: "khoshk-kajand", name: "خشک کنجد", emoji: "🌿" },
       { id: "nan-chai", name: "نان چای", emoji: "☕" },
+      { id: "nan-ghandi", name: "نان قندی", emoji: "🍞" },
+      { id: "nan-jo", name: "نان جو", emoji: "🍞" },
     ],
   },
   {
@@ -240,9 +236,6 @@ const MENU_SECTIONS: MenuSection[] = [
     items: [
       { id: "cake-sib-darchin", name: "کیک سیب و دارچین", emoji: "🍎" },
       { id: "cake-sobhaneh", name: "کیک صبحانه", emoji: "🎂", trayMode: true },
-      { id: "cupcake", name: "کاپ کیک", emoji: "🧁" },
-      { id: "cheesecake-chocolate", name: "چیز کیک برشی شکلات", emoji: "🍰" },
-      { id: "cheesecake-white", name: "چیز کیک برشی سفید", emoji: "🍰" },
       { id: "cake-carrot", name: "کیک هویج", emoji: "🥕" },
       { id: "brownie", name: "براونی", emoji: "🍫", trayMode: true },
       { id: "pudding-asali", name: "پودینگ عسلی", emoji: "🍯", trayMode: true },
@@ -255,18 +248,12 @@ const MENU_SECTIONS: MenuSection[] = [
     icon: "🍪",
     collapsible: true,
     items: [
+      { id: "cookie-shokolati", name: "کوکی شکلاتی", emoji: "🍪" },
+      { id: "cookie-cappuccino", name: "کوکی کاپوچینو", emoji: "🍪" },
+      { id: "cookie-redvelvet", name: "کوکی ردولوت", emoji: "🍪" },
+      { id: "cookie-sadeh-sefid", name: "کوکی ساده (سفید)", emoji: "🍪" },
       { id: "cookie-rejimi", name: "کوکی رژیمی", emoji: "🍪" },
       { id: "candil", name: "کاندیل", emoji: "🕯️" },
-    ],
-  },
-  {
-    id: "swissi-section",
-    title: "سوئیسی",
-    icon: "🍓",
-    collapsible: true,
-    items: [
-      { id: "swissi-mrabai", name: "سوئیسی مربایی", emoji: "🍓", trayMode: true },
-      { id: "swissi-nutella", name: "سوئیسی نوتلایی", emoji: "🍫", trayMode: true },
     ],
   },
   {
@@ -277,18 +264,6 @@ const MENU_SECTIONS: MenuSection[] = [
     items: [
       { id: "sokharis-shirin", name: "سوخاری شیرین", emoji: "🍞" },
       { id: "sokharis-rogan", name: "سوخاری روگن", emoji: "🍞" },
-    ],
-  },
-  {
-    id: "dessert-section",
-    title: "دسر",
-    icon: "🍮",
-    collapsible: true,
-    items: [
-      { id: "dessert-cheesecake", name: "دسر چیز کیک", emoji: "🍰" },
-      { id: "dessert-tiramisu", name: "دسر تیرامیسو", emoji: "🍮" },
-      { id: "dessert-mivei-shatoot", name: "دسر میوه ای (شاتوت)", emoji: "🫐" },
-      { id: "dessert-mivei-tootfarangi", name: "دسر میوه ای (توت فرنگی)", emoji: "🍓" },
     ],
   },
   {
@@ -304,33 +279,25 @@ const MENU_SECTIONS: MenuSection[] = [
       { id: "eclair-bozorg", name: "اکلر بزرگ", emoji: "🍫", trayMode: true },
       { id: "eclair-kuchak", name: "اکلر کوچک", emoji: "🍫", trayMode: true },
       { id: "faransavi", name: "فرانسوی", emoji: "🥖", trayMode: true },
-    ],
-  },
-  {
-    id: "roolet-section",
-    title: "رولت",
-    icon: "🍰",
-    collapsible: true,
-    items: [
+      { id: "dessert-cheesecake", name: "مینی چیز کیک", emoji: "🍰" },
+      { id: "dessert-tiramisu", name: "دسر تیرامیسو", emoji: "🍮" },
+      { id: "dessert-mivei-shatoot", name: "دسر میوه ای شاتوت", emoji: "🫐" },
+      { id: "dessert-mivei-tootfarangi", name: "دسر میوه ای توت فرنگی", emoji: "🍓" },
+      { id: "dessert-mivei-zardaloo", name: "دسر میوه ای زردآلو", emoji: "🍑" },
+      { id: "dessert-mivei-porteghal", name: "دسر میوه ای پرتغال", emoji: "🍊" },
       { id: "roolet-sadeh", name: "رولت ساده", emoji: "🍰", trayMode: true },
       { id: "roolet-shatoot", name: "رولت شاتوت", emoji: "🍰", trayMode: true },
       { id: "roolet-kakao", name: "رولت کاکائو (نوتلا)", emoji: "🍫", trayMode: true },
       { id: "roolet-pesteh", name: "رولت پسته ای", emoji: "🍰", trayMode: true },
       { id: "roolet-lotus", name: "رولت لوتوس", emoji: "🍰", trayMode: true },
-      { id: "roolet-caramel", name: "رولت دلی کاراملی", emoji: "🍯", trayMode: true },
+      { id: "roolet-caramel", name: "رولت کاراملی", emoji: "🍯", trayMode: true },
       { id: "roolet-nargil", name: "رولت نارگیلی", emoji: "🥥", trayMode: true },
       { id: "roolet-zardaalu", name: "رولت زردآلو", emoji: "🍑", trayMode: true },
       { id: "roolet-ghahve", name: "رولت پودر قهوه", emoji: "☕", trayMode: true },
       { id: "roolet-picasso", name: "رولت پیکاسو", emoji: "🎨", trayMode: true },
-    ],
-  },
-  {
-    id: "mikado-section",
-    title: "میکادو",
-    icon: "🍫",
-    collapsible: true,
-    items: [
-      { id: "mikado", name: "میکادو", emoji: "🍫", trayMode: true },
+      { id: "cupcake", name: "کاپ کیک", emoji: "🧁" },
+      { id: "cheesecake-chocolate", name: "چیز کیک برشی شکلات", emoji: "🍰" },
+      { id: "cheesecake-white", name: "چیز کیک برشی سفید", emoji: "🍰" },
     ],
   },
   {
