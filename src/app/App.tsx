@@ -31,6 +31,56 @@ type ItemRow = {
   tray_mode: boolean | null;
 };
 
+type SavedOrder = {
+  quantities: Record<string, number>;
+  lastQuantities: Record<string, number>;
+  traySelections: Record<string, string>;
+  confirmed: Record<string, boolean>;
+  sectionSelectOrder: string[];
+};
+
+const CURRENT_ORDER_STORAGE_KEY = "current-order";
+
+function createEmptySavedOrder(): SavedOrder {
+  return {
+    quantities: {},
+    lastQuantities: {},
+    traySelections: {},
+    confirmed: {},
+    sectionSelectOrder: [],
+  };
+}
+
+function loadSavedOrder(): SavedOrder {
+  if (typeof window === "undefined") return createEmptySavedOrder();
+
+  const savedOrder = window.localStorage.getItem(CURRENT_ORDER_STORAGE_KEY);
+  if (!savedOrder) return createEmptySavedOrder();
+
+  try {
+    const parsed = JSON.parse(savedOrder) as Partial<SavedOrder> | null;
+
+    return {
+      quantities: parsed?.quantities ?? {},
+      lastQuantities: parsed?.lastQuantities ?? {},
+      traySelections: parsed?.traySelections ?? {},
+      confirmed: parsed?.confirmed ?? {},
+      sectionSelectOrder: parsed?.sectionSelectOrder ?? [],
+    };
+  } catch (error) {
+    console.log("Failed to load saved order", error);
+    return createEmptySavedOrder();
+  }
+}
+
+function saveCurrentOrder(order: SavedOrder) {
+  try {
+    window.localStorage.setItem(CURRENT_ORDER_STORAGE_KEY, JSON.stringify(order));
+  } catch (error) {
+    console.log("Failed to save current order", error);
+  }
+}
+
 function buildMenuSections(categories: CategoryRow[], items: ItemRow[]): MenuSection[] {
   const itemsByCategory = items.reduce<Record<string, MenuItem[]>>((acc, item) => {
     const menuItem: MenuItem = {
@@ -181,19 +231,20 @@ function TraySelector({ value, onChange, onRemove, onClose }: TraySelectorProps)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function App() {
+  const [savedOrder] = useState<SavedOrder>(() => loadSavedOrder());
   const [menuSections, setMenuSections] = useState<MenuSection[]>([]);
   const [isMenuLoading, setIsMenuLoading] = useState(true);
   const [menuError, setMenuError] = useState<string | null>(null);
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [lastQuantities, setLastQuantities] = useState<Record<string, number>>({});
-  const [traySelections, setTraySelections] = useState<Record<string, string>>({});
-  const [confirmed, setConfirmed] = useState<Record<string, boolean>>({});
+  const [quantities, setQuantities] = useState<Record<string, number>>(savedOrder.quantities);
+  const [lastQuantities, setLastQuantities] = useState<Record<string, number>>(savedOrder.lastQuantities);
+  const [traySelections, setTraySelections] = useState<Record<string, string>>(savedOrder.traySelections);
+  const [confirmed, setConfirmed] = useState<Record<string, boolean>>(savedOrder.confirmed);
   const [editing, setEditing] = useState<Record<string, string>>({});
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [clearConfirm, setClearConfirm] = useState(false);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
-  const [sectionSelectOrder, setSectionSelectOrder] = useState<string[]>([]);
+  const [sectionSelectOrder, setSectionSelectOrder] = useState<string[]>(savedOrder.sectionSelectOrder);
   const [highlightedItem, setHighlightedItem] = useState<string | null>(null);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -255,6 +306,16 @@ export default function App() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    saveCurrentOrder({
+      quantities,
+      lastQuantities,
+      traySelections,
+      confirmed,
+      sectionSelectOrder,
+    });
+  }, [quantities, lastQuantities, traySelections, confirmed, sectionSelectOrder]);
 
   function isSectionOpen(sectionId: string) {
     return openSections[sectionId] === true;
