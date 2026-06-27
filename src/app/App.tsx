@@ -22,6 +22,7 @@ type CategoryRow = {
   name: string;
   icon: string | null;
   collapsible: boolean | null;
+  sort_order: number | null;
 };
 
 type ItemRow = {
@@ -29,6 +30,7 @@ type ItemRow = {
   category_id: string;
   name: string;
   tray_mode: boolean | null;
+  sort_order: number | null;
 };
 
 type SavedOrder = {
@@ -39,7 +41,16 @@ type SavedOrder = {
   sectionSelectOrder: string[];
 };
 
+type MenuSortOrder = Record<
+  string,
+  {
+    categorySortOrder: number;
+    itemSortOrder: number;
+  }
+>;
+
 const CURRENT_ORDER_STORAGE_KEY = "current-order";
+const FALLBACK_SORT_ORDER = Number.MAX_SAFE_INTEGER;
 
 function createEmptySavedOrder(): SavedOrder {
   return {
@@ -79,6 +90,46 @@ function saveCurrentOrder(order: SavedOrder) {
   } catch (error) {
     console.log("Failed to save current order", error);
   }
+}
+
+function buildMenuSortOrder(categories: CategoryRow[], items: ItemRow[]): MenuSortOrder {
+  const categorySortOrder = categories.reduce<Record<string, number>>((acc, category) => {
+    acc[category.id] = category.sort_order ?? FALLBACK_SORT_ORDER;
+    return acc;
+  }, {});
+
+  return items.reduce<MenuSortOrder>((acc, item) => {
+    acc[item.id] = {
+      categorySortOrder: categorySortOrder[item.category_id] ?? FALLBACK_SORT_ORDER,
+      itemSortOrder: item.sort_order ?? FALLBACK_SORT_ORDER,
+    };
+    return acc;
+  }, {});
+}
+
+function getMenuOrderItems(
+  items: MenuItem[],
+  sortOrder: MenuSortOrder,
+  quantities: Record<string, number>,
+  traySelections: Record<string, string>
+) {
+  return items
+    .filter((item) => (item.trayMode ? !!traySelections[item.id] : !!quantities[item.id]))
+    .sort((a, b) => {
+      const aOrder = sortOrder[a.id] ?? {
+        categorySortOrder: FALLBACK_SORT_ORDER,
+        itemSortOrder: FALLBACK_SORT_ORDER,
+      };
+      const bOrder = sortOrder[b.id] ?? {
+        categorySortOrder: FALLBACK_SORT_ORDER,
+        itemSortOrder: FALLBACK_SORT_ORDER,
+      };
+
+      return (
+        aOrder.categorySortOrder - bOrder.categorySortOrder ||
+        aOrder.itemSortOrder - bOrder.itemSortOrder
+      );
+    });
 }
 
 function buildMenuSections(categories: CategoryRow[], items: ItemRow[]): MenuSection[] {
@@ -233,6 +284,7 @@ function TraySelector({ value, onChange, onRemove, onClose }: TraySelectorProps)
 export default function App() {
   const [savedOrder] = useState<SavedOrder>(() => loadSavedOrder());
   const [menuSections, setMenuSections] = useState<MenuSection[]>([]);
+  const [menuSortOrder, setMenuSortOrder] = useState<MenuSortOrder>({});
   const [isMenuLoading, setIsMenuLoading] = useState(true);
   const [menuError, setMenuError] = useState<string | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>(savedOrder.quantities);
@@ -259,6 +311,10 @@ export default function App() {
     ],
     [menuSections, sectionSelectOrder]
   );
+  const menuOrderItems = useMemo(
+    () => getMenuOrderItems(menu, menuSortOrder, quantities, traySelections),
+    [menu, menuSortOrder, quantities, traySelections]
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -270,11 +326,11 @@ export default function App() {
       const [categoriesResult, itemsResult] = await Promise.all([
         supabase
           .from("categories")
-          .select("id, name, icon, collapsible")
+          .select("id, name, icon, collapsible, sort_order")
           .order("sort_order", { ascending: true }),
         supabase
           .from("items")
-          .select("id, category_id, name, tray_mode")
+          .select("id, category_id, name, tray_mode, sort_order")
           .order("sort_order", { ascending: true }),
       ]);
 
@@ -287,16 +343,18 @@ export default function App() {
         });
         setMenuError("خطا در دریافت منو");
         setMenuSections([]);
+        setMenuSortOrder({});
         setIsMenuLoading(false);
         return;
       }
 
+      const categories = (categoriesResult.data ?? []) as CategoryRow[];
+      const items = (itemsResult.data ?? []) as ItemRow[];
+
       setMenuSections(
-        buildMenuSections(
-          (categoriesResult.data ?? []) as CategoryRow[],
-          (itemsResult.data ?? []) as ItemRow[]
-        )
+        buildMenuSections(categories, items)
       );
+      setMenuSortOrder(buildMenuSortOrder(categories, items));
       setIsMenuLoading(false);
     }
 
