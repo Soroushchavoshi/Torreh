@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Minus, ChevronLeft, ChevronDown, Trash2, Pencil, Check, X, Search } from "lucide-react";
+import { Plus, Minus, ChevronLeft, ChevronDown, Trash2, Pencil, Check, X, Search, Copy } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { supabase } from "../lib/supabase";
 
@@ -293,6 +293,9 @@ export default function App() {
   const [confirmed, setConfirmed] = useState<Record<string, boolean>>(savedOrder.confirmed);
   const [editing, setEditing] = useState<Record<string, string>>({});
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [orderSubmitted, setOrderSubmitted] = useState(false);
+  const [selectedBranch, setSelectedBranch] = useState("چیتگر");
+  const [notes, setNotes] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [clearConfirm, setClearConfirm] = useState(false);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
@@ -460,6 +463,7 @@ export default function App() {
 
   function handleOrder() {
     setLastQuantities((prev) => ({ ...prev, ...quantities }));
+    setOrderSubmitted(false);
     setOrderPlaced(true);
   }
 
@@ -470,6 +474,27 @@ export default function App() {
     setTraySelections({});
     setSectionSelectOrder([]);
     setOrderPlaced(false);
+    setOrderSubmitted(false);
+    setSelectedBranch("چیتگر");
+    setNotes("");
+  }
+
+  function getItemQuantityLabel(item: MenuItem) {
+    return item.trayMode ? traySelections[item.id] : toPersian(quantities[item.id]);
+  }
+
+  async function handleCopyReview() {
+    const markdown = [
+      "| آیتم | مقدار |",
+      "| --- | --- |",
+      ...menuOrderItems.map((item) => `| ${item.name} | ${getItemQuantityLabel(item)} |`),
+    ].join("\n");
+
+    try {
+      await navigator.clipboard.writeText(markdown);
+    } catch (error) {
+      console.log("Failed to copy order review", error);
+    }
   }
 
   function scrollToItem(itemId: string) {
@@ -597,13 +622,6 @@ export default function App() {
   }
 
   if (orderPlaced) {
-    // build ordered list matching chip order (section select order → remaining)
-    const orderedItems = orderedMenuSections.flatMap((s) =>
-      s.items.filter((item) =>
-        item.trayMode ? !!traySelections[item.id] : !!quantities[item.id]
-      )
-    );
-
     return (
       <div
         dir="rtl"
@@ -616,55 +634,125 @@ export default function App() {
           style={{ paddingTop: "max(16px, env(safe-area-inset-top))", paddingBottom: 14 }}
         >
           <div className="max-w-md mx-auto">
-            <h1 className="text-xl font-bold text-foreground">خلاصه سفارش</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">{toPersian(orderedItems.length)} آیتم انتخاب شده</p>
+            <h1 className="text-xl font-bold text-foreground">
+              {orderSubmitted ? "سفارش شما ثبت شد" : "بررسی سفارش"}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {toPersian(menuOrderItems.length)} آیتم انتخاب شده
+            </p>
           </div>
         </div>
 
-        {/* Table */}
         <div className="max-w-md mx-auto w-full px-4 py-5 flex-1">
-          <div className="bg-card rounded-2xl border border-border overflow-hidden">
-            {/* Table header */}
-            <div
-              className="flex items-center border-b border-border px-4 py-2.5"
-              style={{ background: "rgba(232,148,58,0.06)" }}
-            >
-              <span className="flex-1 text-xs font-bold text-muted-foreground">آیتم</span>
-              <span className="text-xs font-bold text-muted-foreground">مقدار</span>
+          {orderSubmitted ? (
+            <div className="bg-card rounded-2xl border border-border px-5 py-6 text-center">
+              <p className="text-base font-bold text-foreground">سفارش شما ثبت شد</p>
             </div>
-
-            {/* Rows */}
-            {orderedItems.map((item, idx) => {
-              const label = item.trayMode
-                ? traySelections[item.id]
-                : toPersian(quantities[item.id]);
-              return (
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-card rounded-2xl border border-border overflow-hidden">
                 <div
-                  key={item.id}
-                  className="flex items-center px-4 py-3 border-b border-border last:border-b-0"
-                  style={{ background: idx % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)" }}
+                  className="flex items-center border-b border-border px-4 py-2.5"
+                  style={{ background: "rgba(232,148,58,0.06)" }}
                 >
-                  <span className="flex-1 text-sm font-medium text-foreground">{item.name}</span>
-                  <span className="text-sm font-bold text-primary">{label}</span>
+                  <span className="flex-1 text-xs font-bold text-muted-foreground">آیتم</span>
+                  <span className="text-xs font-bold text-muted-foreground">مقدار</span>
                 </div>
-              );
-            })}
-          </div>
+
+                {menuOrderItems.map((item, idx) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center px-4 py-3 border-b border-border last:border-b-0"
+                    style={{ background: idx % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)" }}
+                  >
+                    <span className="flex-1 text-sm font-medium text-foreground">{item.name}</span>
+                    <span className="text-sm font-bold text-primary">{getItemQuantityLabel(item)}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-muted-foreground">شعبه</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {["چیتگر", "پامچال", "کوهک"].map((branch) => (
+                      <button
+                        key={branch}
+                        onClick={() => setSelectedBranch(branch)}
+                        className="rounded-xl text-sm font-semibold active:scale-95 transition-transform border"
+                        style={{
+                          height: 42,
+                          background:
+                            selectedBranch === branch ? "var(--primary)" : "rgba(255,255,255,0.03)",
+                          color:
+                            selectedBranch === branch
+                              ? "var(--primary-foreground)"
+                              : "var(--foreground)",
+                          borderColor:
+                            selectedBranch === branch
+                              ? "var(--primary)"
+                              : "rgba(255,255,255,0.08)",
+                        }}
+                      >
+                        {branch}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <input
+                  type="text"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="افزودن توضیحات"
+                  className="w-full bg-secondary text-foreground text-sm rounded-xl outline-none placeholder:text-muted-foreground border border-transparent focus:border-primary/40 transition-colors"
+                  style={{ height: 44, paddingInline: 14, caretColor: "#e8943a" }}
+                />
+
+                <button
+                  onClick={handleCopyReview}
+                  className="w-full bg-secondary text-foreground rounded-xl font-semibold text-sm active:scale-95 transition-transform flex items-center justify-center gap-2"
+                  style={{ height: 44 }}
+                >
+                  <Copy size={16} />
+                  کپی جدول
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Bottom */}
         <div
           className="px-4 pb-6"
           style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}
         >
           <div className="max-w-md mx-auto">
-            <button
-              onClick={handleReset}
-              className="w-full bg-primary text-primary-foreground rounded-2xl font-bold text-base active:scale-95 transition-transform flex items-center justify-center gap-2"
-              style={{ height: 52 }}
-            >
-              سفارش جدید
-            </button>
+            {orderSubmitted ? (
+              <button
+                onClick={handleReset}
+                className="w-full bg-primary text-primary-foreground rounded-2xl font-bold text-base active:scale-95 transition-transform flex items-center justify-center gap-2"
+                style={{ height: 52 }}
+              >
+                سفارش جدید
+              </button>
+            ) : (
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setOrderPlaced(false)}
+                  className="flex-1 bg-secondary text-foreground rounded-2xl font-bold text-base active:scale-95 transition-transform"
+                  style={{ height: 52 }}
+                >
+                  بازگشت
+                </button>
+                <button
+                  onClick={() => setOrderSubmitted(true)}
+                  className="flex-1 bg-primary text-primary-foreground rounded-2xl font-bold text-base active:scale-95 transition-transform"
+                  style={{ height: 52 }}
+                >
+                  ثبت سفارش
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
