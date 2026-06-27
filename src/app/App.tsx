@@ -1,11 +1,11 @@
-import { useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Minus, ChevronLeft, ChevronDown, Trash2, Pencil, Check, X, Search } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { supabase } from "../lib/supabase";
 
 type MenuItem = {
   id: string;
   name: string;
-  emoji: string;
   trayMode?: boolean;
 };
 
@@ -13,10 +13,44 @@ type MenuSection = {
   id: string;
   title?: string;
   icon?: string;
-  iconStyle?: React.CSSProperties;
   collapsible: boolean;
   items: MenuItem[];
 };
+
+type CategoryRow = {
+  id: string;
+  name: string;
+  icon: string | null;
+  collapsible: boolean | null;
+};
+
+type ItemRow = {
+  id: string;
+  category_id: string;
+  name: string;
+  tray_mode: boolean | null;
+};
+
+function buildMenuSections(categories: CategoryRow[], items: ItemRow[]): MenuSection[] {
+  const itemsByCategory = items.reduce<Record<string, MenuItem[]>>((acc, item) => {
+    const menuItem: MenuItem = {
+      id: item.id,
+      name: item.name,
+      trayMode: item.tray_mode || undefined,
+    };
+
+    acc[item.category_id] = [...(acc[item.category_id] ?? []), menuItem];
+    return acc;
+  }, {});
+
+  return categories.map((category) => ({
+    id: category.id,
+    title: category.name,
+    icon: category.icon ?? undefined,
+    collapsible: category.collapsible ?? true,
+    items: itemsByCategory[category.id] ?? [],
+  }));
+}
 
 function toPersian(n: number) {
   return String(n).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[+d]);
@@ -27,295 +61,6 @@ const TRAY_PRESETS = [
   { id: "base", label: "یک کف سینی" },
 ];
 
-const MENU_SECTIONS: MenuSection[] = [
-  {
-    id: "nim-baguette-section",
-    title: "نان سفید",
-    icon: "🥖",
-    collapsible: true,
-    items: [
-      { id: "nim-baguette", name: "نیم باگت", emoji: "🥖" },
-      { id: "sandwichi", name: "ساندویچی", emoji: "🥪" },
-      { id: "ghalami", name: "قلمی", emoji: "🥖" },
-      { id: "barbari-sadeh", name: "بربری ساده", emoji: "🫓" },
-      { id: "barbari-korei", name: "بربری کره ای", emoji: "🫓" },
-      { id: "hamburger", name: "همبرگر", emoji: "🍔" },
-      { id: "mini-hamburger", name: "مینی همبرگر", emoji: "🍔" },
-      { id: "finger-food", name: "فینگر فود", emoji: "🍟" },
-      { id: "sandwichi-mac", name: "ساندویچی مک", emoji: "🥪" },
-      { id: "burger-mac", name: "برگر مک", emoji: "🍔" },
-      { id: "khamir-pizza", name: "خمیر پیتزا", emoji: "🍕" },
-    ],
-  },
-  {
-    id: "rogan-section",
-    title: "روگن",
-    icon: "🥖",
-    iconStyle: { filter: "sepia(1) saturate(0.3) brightness(0.55)" },
-    collapsible: true,
-    items: [
-      { id: "nim-baguette-rogan", name: "نیم باگت روگن", emoji: "🥖" },
-      { id: "sandwichi-rogan", name: "ساندویچی روگن", emoji: "🥪" },
-      { id: "ghalami-rogan", name: "قلمی روگن", emoji: "🥖" },
-      { id: "mini-burger-rogan", name: "مینی برگر روگن", emoji: "🍔" },
-      { id: "hamburger-rogan", name: "همبرگر روگن", emoji: "🍔" },
-      { id: "barbari-rogan", name: "بربری روگن", emoji: "🫓" },
-      { id: "charki-chavdar", name: "چارکی چاودار", emoji: "🍞" },
-      { id: "super-siah", name: "سوپر سیاه", emoji: "🍞" },
-      { id: "haft-giah", name: "هفت گیاه", emoji: "🌿" },
-      { id: "bagel", name: "بیگل", emoji: "🥯" },
-    ],
-  },
-  {
-    id: "gata-section",
-    title: "گاتا",
-    icon: "🍪",
-    collapsible: true,
-    items: [
-      { id: "gata-sadeh", name: "گاتا ساده", emoji: "🍪" },
-      { id: "gata-khorma", name: "گاتا خرما", emoji: "🍪" },
-      { id: "gata-gerdoo", name: "گاتا گردو", emoji: "🍪" },
-      { id: "gata-miveyi", name: "گاتا میوه ای", emoji: "🍪" },
-      { id: "gata-karebadaam", name: "گاتا کره بادام", emoji: "🍪" },
-    ],
-  },
-  {
-    id: "eshtrodel-section",
-    title: "اشترودل",
-    icon: "🥐",
-    collapsible: true,
-    items: [
-      { id: "eshtrodel-pizza", name: "اشترودل پیتزایی", emoji: "🥐" },
-      { id: "eshtrodel-gerdoo", name: "اشترودل گردو", emoji: "🥐" },
-      { id: "eshtrodel-albaloo", name: "اشترودل آلبالو", emoji: "🥐" },
-    ],
-  },
-  {
-    id: "pirashki-section",
-    title: "ساندویچ کوچک",
-    icon: "🌭",
-    collapsible: true,
-    items: [
-      { id: "beef-cheese", name: "بیف چیز", emoji: "🧀" },
-      { id: "mazeh", name: "مزه", emoji: "🍽️" },
-    ],
-  },
-  {
-    id: "shirmal-section",
-    title: "شیرمال",
-    icon: "🍞",
-    collapsible: true,
-    items: [
-      { id: "shirmal-gisoo", name: "شیرمال گیسو", emoji: "🍞" },
-      { id: "shirmal-makhsoos", name: "شیرمال مخصوص", emoji: "🍞" },
-    ],
-  },
-  {
-    id: "simyt-section",
-    title: "سیمیت",
-    icon: "🥯",
-    collapsible: true,
-    items: [
-      { id: "simyt", name: "سیمیت", emoji: "🥯" },
-      { id: "simyt-sobhaneh", name: "سیمیت صبحانه (پنیر)", emoji: "🥯" },
-      { id: "simyt-khorma", name: "سیمیت خرما", emoji: "🥯" },
-    ],
-  },
-  {
-    id: "croissant-section",
-    title: "کروسان",
-    icon: "🥐",
-    collapsible: true,
-    items: [
-      { id: "croissant-sadeh", name: "کروسان ساده", emoji: "🥐" },
-      { id: "croissant-nutella", name: "کروسان نوتلا", emoji: "🥐" },
-      { id: "croissant-badam", name: "کروسان بادام", emoji: "🥐" },
-    ],
-  },
-  {
-    id: "pie-section",
-    title: "پای",
-    icon: "🥧",
-    collapsible: true,
-    items: [
-      { id: "pie-sib", name: "پای سیب", emoji: "🍎", trayMode: true },
-      { id: "pie-ananas", name: "پای آناناس", emoji: "🍍", trayMode: true },
-    ],
-  },
-  {
-    id: "misc-3-section",
-    title: "شیرینی خشک",
-    icon: "🍪",
-    collapsible: true,
-    items: [
-      { id: "cake-yazdi", name: "کیک یزدی", emoji: "🎂", trayMode: true },
-      { id: "shirini-keshmeshi", name: "شیرینی کشمشی", emoji: "🍇", trayMode: true },
-      { id: "saaq-aroos", name: "ساق عروس", emoji: "🌹", trayMode: true },
-      { id: "danmarki", name: "دانمارکی", emoji: "🍰", trayMode: true },
-      { id: "lando", name: "لندو", emoji: "🍰", trayMode: true },
-      { id: "danish", name: "دنیش", emoji: "🥐", trayMode: true },
-      { id: "shoorini", name: "شورینی", emoji: "🍪", trayMode: true },
-      { id: "mami-nutella", name: "مامی نوتلا", emoji: "🍫", trayMode: true },
-      { id: "muffin-sadeh", name: "مافین ساده", emoji: "🧁" },
-      { id: "muffin-chocolate", name: "مافین شکلات", emoji: "🧁" },
-      { id: "muffin-nescafe", name: "مافین نسکافه", emoji: "☕" },
-      { id: "lava", name: "لاوا", emoji: "🍫" },
-      { id: "zaban", name: "زبان", emoji: "🍞" },
-      { id: "ajma", name: "آجما/آچما", emoji: "🥐" },
-      { id: "zaban-keshmeshi", name: "زبان کشمشی", emoji: "🍞" },
-      { id: "swissi-mrabai", name: "سوئیسی مربایی", emoji: "🍓", trayMode: true },
-      { id: "swissi-nutella", name: "سوئیسی نوتلایی", emoji: "🍫", trayMode: true },
-      { id: "mikado", name: "میکادو", emoji: "🍫", trayMode: true },
-    ],
-  },
-  {
-    id: "donut-section",
-    title: "پیراشکی (دونات)",
-    icon: "🍩",
-    collapsible: true,
-    items: [
-      { id: "donut-shekari", name: "دونات شکری", emoji: "🍩" },
-      { id: "donut-kreamddar", name: "دونات کرمدار", emoji: "🍩" },
-      { id: "donut-kakaoyi", name: "دونات کاکائویی", emoji: "🍩" },
-      { id: "pirashki-hotdog", name: "پیراشکی هات داگ", emoji: "🌭" },
-    ],
-  },
-  {
-    id: "khamir-torsh-section",
-    title: "خمیر ترش",
-    icon: "🌾",
-    collapsible: true,
-    items: [
-      { id: "paneh", name: "پانه", emoji: "🍞" },
-      { id: "chiapata", name: "چیاپاتا", emoji: "🫓" },
-      { id: "baguette-original", name: "باگت اورجینال", emoji: "🥖" },
-      { id: "ekmak", name: "اکمک", emoji: "🍞" },
-      { id: "artisan", name: "آرتیزن", emoji: "🍞" },
-      { id: "asal-gerdoo", name: "عسل گردو", emoji: "🍯" },
-      { id: "nan-sir", name: "نان سیر", emoji: "🧄" },
-      { id: "focaccia", name: "فوکاچیا", emoji: "🫓" },
-    ],
-  },
-  {
-    id: "toast-section",
-    title: "تست",
-    icon: "🍞",
-    collapsible: true,
-    items: [
-      { id: "toast-bozorg", name: "تست بزرگ", emoji: "🍞" },
-      { id: "toast-kuchak", name: "تست کوچک", emoji: "🍞" },
-      { id: "toast-rogan-bozorg", name: "تست روگن بزرگ", emoji: "🍞" },
-      { id: "toast-rogan-kuchak", name: "تست روگن کوچک", emoji: "🍞" },
-      { id: "toast-swital-bozorg", name: "تست سویتال بزرگ", emoji: "🍞" },
-      { id: "toast-swital-kuchak", name: "تست سویتال کوچک", emoji: "🍞" },
-      { id: "toast-caesar", name: "تست سزار", emoji: "🍞" },
-    ],
-  },
-  {
-    id: "salad-section",
-    title: "نان خشک",
-    icon: "🥗",
-    collapsible: true,
-    items: [
-      { id: "salad-sirdar", name: "سالاد سیردار", emoji: "🥗" },
-      { id: "soup-konjedi", name: "سوپ کنجدی", emoji: "🍲" },
-      { id: "nan-protein", name: "نان پروتئین", emoji: "🍞" },
-      { id: "khoshk-shevid", name: "خشک شوید", emoji: "🌿" },
-      { id: "khoshk-tokhme", name: "خشک تخمه", emoji: "🌱" },
-      { id: "khoshk-kajand", name: "خشک کنجد", emoji: "🌿" },
-      { id: "nan-chai", name: "نان چای", emoji: "☕" },
-      { id: "nan-ghandi", name: "نان قندی", emoji: "🍞" },
-      { id: "nan-jo", name: "نان جو", emoji: "🍞" },
-    ],
-  },
-  {
-    id: "cake-section",
-    title: "کیک ها",
-    icon: "🎂",
-    collapsible: true,
-    items: [
-      { id: "cake-sib-darchin", name: "کیک سیب و دارچین", emoji: "🍎" },
-      { id: "cake-sobhaneh", name: "کیک صبحانه", emoji: "🎂", trayMode: true },
-      { id: "cake-carrot", name: "کیک هویج", emoji: "🥕" },
-      { id: "brownie", name: "براونی", emoji: "🍫", trayMode: true },
-      { id: "pudding-asali", name: "پودینگ عسلی", emoji: "🍯", trayMode: true },
-      { id: "cake-nutella-kuchak", name: "کیک نوتلا کوچک", emoji: "🍫" },
-    ],
-  },
-  {
-    id: "cookie-section",
-    title: "کوکی و کاندیل",
-    icon: "🍪",
-    collapsible: true,
-    items: [
-      { id: "cookie-shokolati", name: "کوکی شکلاتی", emoji: "🍪" },
-      { id: "cookie-cappuccino", name: "کوکی کاپوچینو", emoji: "🍪" },
-      { id: "cookie-redvelvet", name: "کوکی ردولوت", emoji: "🍪" },
-      { id: "cookie-sadeh-sefid", name: "کوکی ساده (سفید)", emoji: "🍪" },
-      { id: "cookie-rejimi", name: "کوکی رژیمی", emoji: "🍪" },
-      { id: "candil", name: "کاندیل", emoji: "🕯️" },
-    ],
-  },
-  {
-    id: "sokharis-section",
-    title: "سوخاری",
-    icon: "🍞",
-    collapsible: true,
-    items: [
-      { id: "sokharis-shirin", name: "سوخاری شیرین", emoji: "🍞" },
-      { id: "sokharis-rogan", name: "سوخاری روگن", emoji: "🍞" },
-    ],
-  },
-  {
-    id: "shirini-tar-section",
-    title: "شیرینی تر",
-    icon: "🧁",
-    collapsible: true,
-    items: [
-      { id: "napoleoni", name: "ناپلئونی", emoji: "🥙", trayMode: true },
-      { id: "nan-khamei-bozorg", name: "نان خامه ای بزرگ", emoji: "🍞", trayMode: true },
-      { id: "nan-khamei-kuchak", name: "نان خامه ای کوچک", emoji: "🍞", trayMode: true },
-      { id: "nan-khamei-moozi", name: "نان خامه ای موزی", emoji: "🍌", trayMode: true },
-      { id: "eclair-bozorg", name: "اکلر بزرگ", emoji: "🍫", trayMode: true },
-      { id: "eclair-kuchak", name: "اکلر کوچک", emoji: "🍫", trayMode: true },
-      { id: "faransavi", name: "فرانسوی", emoji: "🥖", trayMode: true },
-      { id: "dessert-cheesecake", name: "مینی چیز کیک", emoji: "🍰" },
-      { id: "dessert-tiramisu", name: "دسر تیرامیسو", emoji: "🍮" },
-      { id: "dessert-mivei-shatoot", name: "دسر میوه ای شاتوت", emoji: "🫐" },
-      { id: "dessert-mivei-tootfarangi", name: "دسر میوه ای توت فرنگی", emoji: "🍓" },
-      { id: "dessert-mivei-zardaloo", name: "دسر میوه ای زردآلو", emoji: "🍑" },
-      { id: "dessert-mivei-porteghal", name: "دسر میوه ای پرتغال", emoji: "🍊" },
-      { id: "roolet-sadeh", name: "رولت ساده", emoji: "🍰", trayMode: true },
-      { id: "roolet-shatoot", name: "رولت شاتوت", emoji: "🍰", trayMode: true },
-      { id: "roolet-kakao", name: "رولت کاکائو (نوتلا)", emoji: "🍫", trayMode: true },
-      { id: "roolet-pesteh", name: "رولت پسته ای", emoji: "🍰", trayMode: true },
-      { id: "roolet-lotus", name: "رولت لوتوس", emoji: "🍰", trayMode: true },
-      { id: "roolet-caramel", name: "رولت کاراملی", emoji: "🍯", trayMode: true },
-      { id: "roolet-nargil", name: "رولت نارگیلی", emoji: "🥥", trayMode: true },
-      { id: "roolet-zardaalu", name: "رولت زردآلو", emoji: "🍑", trayMode: true },
-      { id: "roolet-ghahve", name: "رولت پودر قهوه", emoji: "☕", trayMode: true },
-      { id: "roolet-picasso", name: "رولت پیکاسو", emoji: "🎨", trayMode: true },
-      { id: "cupcake", name: "کاپ کیک", emoji: "🧁" },
-      { id: "cheesecake-chocolate", name: "چیز کیک برشی شکلات", emoji: "🍰" },
-      { id: "cheesecake-white", name: "چیز کیک برشی سفید", emoji: "🍰" },
-    ],
-  },
-  {
-    id: "mochi-section",
-    title: "موچی",
-    icon: "🍡",
-    collapsible: true,
-    items: [
-      { id: "mochi-tootfarangi", name: "موچی توت فرنگی", emoji: "🍓" },
-      { id: "mochi-nutella", name: "موچی نوتلا", emoji: "🍫" },
-      { id: "mochi-caramel", name: "موچی کارامل", emoji: "🍯" },
-      { id: "mochi-shatoot", name: "موچی شاتوت", emoji: "🫐" },
-      { id: "mochi-ranginkaman", name: "موچی رنگین کمان", emoji: "🌈" },
-    ],
-  },
-];
-
-const MENU: MenuItem[] = MENU_SECTIONS.flatMap((s) => s.items);
 
 // ─── TraySelector ────────────────────────────────────────────────────────────
 type TraySelectorProps = {
@@ -436,6 +181,9 @@ function TraySelector({ value, onChange, onRemove, onClose }: TraySelectorProps)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function App() {
+  const [menuSections, setMenuSections] = useState<MenuSection[]>([]);
+  const [isMenuLoading, setIsMenuLoading] = useState(true);
+  const [menuError, setMenuError] = useState<string | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [lastQuantities, setLastQuantities] = useState<Record<string, number>>({});
   const [traySelections, setTraySelections] = useState<Record<string, string>>({});
@@ -450,6 +198,63 @@ export default function App() {
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const searchRef = useRef<HTMLInputElement>(null);
+  const menu = useMemo(() => menuSections.flatMap((section) => section.items), [menuSections]);
+  const orderedMenuSections = useMemo(
+    () => [
+      ...sectionSelectOrder
+        .map((sectionId) => menuSections.find((section) => section.id === sectionId))
+        .filter((section): section is MenuSection => Boolean(section)),
+      ...menuSections.filter((section) => !sectionSelectOrder.includes(section.id)),
+    ],
+    [menuSections, sectionSelectOrder]
+  );
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadMenu() {
+      setIsMenuLoading(true);
+      setMenuError(null);
+
+      const [categoriesResult, itemsResult] = await Promise.all([
+        supabase
+          .from("categories")
+          .select("id, name, icon, collapsible")
+          .order("sort_order", { ascending: true }),
+        supabase
+          .from("items")
+          .select("id, category_id, name, tray_mode")
+          .order("sort_order", { ascending: true }),
+      ]);
+
+      if (!isMounted) return;
+
+      if (categoriesResult.error || itemsResult.error) {
+        console.log("Failed to load menu data from Supabase", {
+          categoriesError: categoriesResult.error,
+          itemsError: itemsResult.error,
+        });
+        setMenuError("خطا در دریافت منو");
+        setMenuSections([]);
+        setIsMenuLoading(false);
+        return;
+      }
+
+      setMenuSections(
+        buildMenuSections(
+          (categoriesResult.data ?? []) as CategoryRow[],
+          (itemsResult.data ?? []) as ItemRow[]
+        )
+      );
+      setIsMenuLoading(false);
+    }
+
+    loadMenu();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   function isSectionOpen(sectionId: string) {
     return openSections[sectionId] === true;
@@ -460,27 +265,27 @@ export default function App() {
   }
 
   const filteredMenu = searchQuery.trim()
-    ? MENU.filter((item) => item.name.includes(searchQuery.trim()))
+    ? menu.filter((item) => item.name.includes(searchQuery.trim()))
     : [];
 
-  const confirmedItems = MENU.filter((item) => confirmed[item.id]);
+  const confirmedItems = menu.filter((item) => confirmed[item.id]);
   const hasAnyConfirmed = confirmedItems.some((item) =>
     item.trayMode ? !!traySelections[item.id] : !!quantities[item.id]
   );
 
   const totalQty = Object.values(quantities).reduce((a, b) => a + b, 0);
   const hasOrder = hasAnyConfirmed || totalQty > 0;
-  const confirmedCount = MENU.filter((item) =>
+  const confirmedCount = menu.filter((item) =>
     item.trayMode ? !!traySelections[item.id] : !!quantities[item.id]
   ).length;
 
   function handleConfirm(id: string) {
     setConfirmed((prev) => ({ ...prev, [id]: true }));
-    const item = MENU.find((m) => m.id === id);
+    const item = menu.find((m) => m.id === id);
     if (!item?.trayMode) {
       setQuantities((prev) => ({ ...prev, [id]: lastQuantities[id] ?? 1 }));
     }
-    const section = MENU_SECTIONS.find((s) => s.items.some((i) => i.id === id));
+    const section = menuSections.find((s) => s.items.some((i) => i.id === id));
     if (section) {
       setSectionSelectOrder((prev) =>
         prev.includes(section.id) ? prev : [...prev, section.id]
@@ -506,7 +311,7 @@ export default function App() {
     setQuantities((prev) => { const c = { ...prev }; delete c[id]; return c; });
     setTraySelections((prev) => { const c = { ...prev }; delete c[id]; return c; });
     // remove section from order if no items remain selected
-    const section = MENU_SECTIONS.find((s) => s.items.some((i) => i.id === id));
+    const section = menuSections.find((s) => s.items.some((i) => i.id === id));
     if (section) {
       const otherSelected = section.items.some(
         (i) => i.id !== id && (confirmed[i.id] || quantities[i.id])
@@ -550,7 +355,7 @@ export default function App() {
 
   function scrollToItem(itemId: string) {
     // Find which section this item belongs to
-    const section = MENU_SECTIONS.find((s) => s.items.some((i) => i.id === itemId));
+    const section = menuSections.find((s) => s.items.some((i) => i.id === itemId));
     
     // Open the section if it's closed
     if (section && !isSectionOpen(section.id)) {
@@ -674,11 +479,7 @@ export default function App() {
 
   if (orderPlaced) {
     // build ordered list matching chip order (section select order → remaining)
-    const orderedSections = [
-      ...sectionSelectOrder.map((sid) => MENU_SECTIONS.find((s) => s.id === sid)!),
-      ...MENU_SECTIONS.filter((s) => !sectionSelectOrder.includes(s.id)),
-    ];
-    const orderedItems = orderedSections.flatMap((s) =>
+    const orderedItems = orderedMenuSections.flatMap((s) =>
       s.items.filter((item) =>
         item.trayMode ? !!traySelections[item.id] : !!quantities[item.id]
       )
@@ -801,8 +602,16 @@ export default function App() {
         className="max-w-md mx-auto px-4 pt-5"
         style={{ paddingBottom: 180 }}
       >
+        {isMenuLoading && (
+          <p className="text-center text-muted-foreground text-sm pt-10">در حال دریافت منو…</p>
+        )}
+
+        {!isMenuLoading && menuError && (
+          <p className="text-center text-destructive text-sm pt-10">{menuError}</p>
+        )}
+
         {/* Search mode */}
-        {searchQuery !== "" && (
+        {!isMenuLoading && !menuError && searchQuery !== "" && (
           <div className="space-y-3">
             {filteredMenu.length === 0 && (
               <p className="text-center text-muted-foreground text-sm pt-10">آیتمی یافت نشد</p>
@@ -818,15 +627,12 @@ export default function App() {
         )}
 
         {/* Sections mode */}
-        {searchQuery === "" && (
+        {!isMenuLoading && !menuError && searchQuery === "" && (
           <div className="space-y-1">
-            {[
-              ...sectionSelectOrder.map((sid) => MENU_SECTIONS.find((s) => s.id === sid)!),
-              ...MENU_SECTIONS.filter((s) => !sectionSelectOrder.includes(s.id)),
-            ].map((section, sectionIndex) => {
+            {orderedMenuSections.map((section, sectionIndex) => {
               const isOpen = !section.collapsible || isSectionOpen(section.id);
               const hasTitle = !!section.title && section.collapsible;
-              const prevSection = sectionIndex > 0 ? MENU_SECTIONS[sectionIndex - 1] : null;
+              const prevSection = sectionIndex > 0 ? orderedMenuSections[sectionIndex - 1] : null;
               const prevIsOpen = prevSection ? (!prevSection.collapsible || isSectionOpen(prevSection.id)) : false;
               
               // Check if any item from this section is confirmed
@@ -868,7 +674,7 @@ export default function App() {
                           : "rgba(255,255,255,0.06)",
                       }}
                     >
-                      <span className="text-base" style={section.iconStyle}>{section.icon}</span>
+                      <span className="text-base">{section.icon}</span>
                       <span className="flex-1 text-right text-sm font-bold text-foreground">
                         {section.title}
                       </span>
@@ -947,7 +753,7 @@ export default function App() {
                   scrollbarColor: "rgba(232,148,58,0.3) transparent",
                 }}
               >
-                {MENU.filter((item) => confirmed[item.id]).map((item) => {
+                {menu.filter((item) => confirmed[item.id]).map((item) => {
                   const chipLabel = item.trayMode
                     ? traySelections[item.id] || null
                     : quantities[item.id]
