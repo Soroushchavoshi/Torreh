@@ -296,6 +296,7 @@ export default function App() {
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState("چیتگر");
   const [notes, setNotes] = useState("");
+  const [copySucceeded, setCopySucceeded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [clearConfirm, setClearConfirm] = useState(false);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
@@ -304,6 +305,7 @@ export default function App() {
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const searchRef = useRef<HTMLInputElement>(null);
+  const copyStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const menu = useMemo(() => menuSections.flatMap((section) => section.items), [menuSections]);
   const orderedMenuSections = useMemo(
     () => [
@@ -377,6 +379,14 @@ export default function App() {
       sectionSelectOrder,
     });
   }, [quantities, lastQuantities, traySelections, confirmed, sectionSelectOrder]);
+
+  useEffect(() => {
+    return () => {
+      if (copyStatusTimerRef.current) {
+        clearTimeout(copyStatusTimerRef.current);
+      }
+    };
+  }, []);
 
   function isSectionOpen(sectionId: string) {
     return openSections[sectionId] === true;
@@ -477,6 +487,7 @@ export default function App() {
     setOrderSubmitted(false);
     setSelectedBranch("چیتگر");
     setNotes("");
+    setCopySucceeded(false);
   }
 
   function getItemQuantityLabel(item: MenuItem) {
@@ -485,14 +496,23 @@ export default function App() {
 
   async function handleCopyReview() {
     const markdown = [
+      `شعبه: ${selectedBranch}`,
+      "",
       "| آیتم | مقدار |",
       "| --- | --- |",
       ...menuOrderItems.map((item) => `| ${item.name} | ${getItemQuantityLabel(item)} |`),
-      ...(notes.trim() ? ["", "توضیحات:", "", notes.trim()] : []),
+      ...(notes.trim() ? ["", "توضیحات:", notes.trim()] : []),
     ].join("\n");
 
     try {
       await navigator.clipboard.writeText(markdown);
+      setCopySucceeded(true);
+      if (copyStatusTimerRef.current) {
+        clearTimeout(copyStatusTimerRef.current);
+      }
+      copyStatusTimerRef.current = setTimeout(() => {
+        setCopySucceeded(false);
+      }, 2500);
     } catch (error) {
       console.log("Failed to copy order review", error);
     }
@@ -714,6 +734,14 @@ export default function App() {
                 </button>
               </form>
             </details>
+
+            <button
+              onClick={handleCopyReview}
+              className="w-full px-4 text-right text-sm font-semibold text-primary active:opacity-60 transition-opacity flex items-center justify-start gap-2"
+            >
+              {copySucceeded ? <Check size={16} /> : <Copy size={16} />}
+              {copySucceeded ? "کپی شد" : "کپی سفارش"}
+            </button>
           </div>
         </div>
 
