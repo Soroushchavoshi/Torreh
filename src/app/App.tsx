@@ -674,7 +674,48 @@ export default function App() {
                   <span className="text-sm font-bold text-primary">{getItemQuantityLabel(item)}</span>
                 </div>
               ))}
+
+              {notes.trim() && (
+                <div
+                  className="flex items-start px-4 py-3 border-b border-border last:border-b-0"
+                  style={{ background: menuOrderItems.length % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)" }}
+                >
+                  <span className="flex-1 text-sm font-medium text-foreground">توضیحات</span>
+                  <span className="text-sm font-bold text-primary whitespace-pre-wrap text-left">{notes.trim()}</span>
+                </div>
+              )}
             </div>
+
+            <details className="px-4 group">
+              <summary className="list-none text-sm font-semibold text-primary active:opacity-60 transition-opacity cursor-pointer group-open:hidden [&::-webkit-details-marker]:hidden">
+                {notes.trim() ? "ویرایش توضیحات" : "➕ افزودن توضیحات"}
+              </summary>
+              <form
+                className="hidden group-open:block space-y-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  setNotes(String(formData.get("notes") ?? ""));
+                  e.currentTarget.closest("details")?.removeAttribute("open");
+                }}
+              >
+                <textarea
+                  key={notes}
+                  name="notes"
+                  defaultValue={notes}
+                  rows={4}
+                  placeholder="افزودن توضیحات"
+                  className="w-full bg-secondary text-foreground text-sm rounded-xl outline-none placeholder:text-muted-foreground border border-transparent focus:border-primary/40 transition-colors resize-none"
+                  style={{ padding: 14, caretColor: "#e8943a" }}
+                />
+                <button
+                  type="submit"
+                  className="text-sm font-semibold text-primary active:opacity-60 transition-opacity"
+                >
+                  ذخیره توضیحات
+                </button>
+              </form>
+            </details>
           </div>
         </div>
 
