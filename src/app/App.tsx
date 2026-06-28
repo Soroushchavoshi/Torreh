@@ -667,7 +667,7 @@ export default function App() {
         <div className="max-w-md mx-auto w-full px-4 py-5 flex-1">
           <div className="space-y-3">
             <div className="bg-card rounded-2xl border border-border overflow-visible">
-            <div className="p-4" style={{ background: "rgba(255,255,255,0.01)" }}>
+            <div className="p-4 bg-secondary/30">
               <div className="flex items-start justify-between gap-4">
                 <span className="text-sm font-bold text-foreground pt-2">شعبه</span>
                 <details className="relative z-30 group group-open:mb-32">
@@ -723,8 +723,7 @@ export default function App() {
             </div>
 
             <details
-              className="border-t border-border p-4 group"
-              style={{ background: "rgba(255,255,255,0.01)" }}
+              className="border-t border-border p-4 group bg-secondary/30"
               onBlur={(e) => {
                 const nextTarget = e.relatedTarget;
                 if (nextTarget instanceof Node && e.currentTarget.contains(nextTarget)) return;
@@ -774,8 +773,9 @@ export default function App() {
                     </div>
                   </div>
                 ) : (
-                  <span className="text-sm font-medium text-primary group-open:hidden">
-                    ➕ افزودن توضیحات
+                  <span className="text-sm font-medium text-primary group-open:hidden inline-flex items-center gap-2">
+                    <Plus size={15} />
+                    افزودن توضیحات
                   </span>
                 )}
               </summary>
