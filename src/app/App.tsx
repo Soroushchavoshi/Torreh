@@ -753,16 +753,19 @@ export default function App() {
             <div className="flex gap-3">
               <button
                 onClick={() => setOrderPlaced(false)}
-                className="flex-1 bg-secondary text-foreground rounded-2xl font-bold text-base active:scale-95 transition-transform"
+                className="flex-1 bg-secondary text-primary rounded-2xl font-bold text-base active:scale-95 transition-transform"
                 style={{ height: 52 }}
               >
                 بازگشت
               </button>
               <button
-                className="flex-1 bg-primary text-primary-foreground rounded-2xl font-bold text-base active:scale-95 transition-transform"
-                style={{ height: 52 }}
+                onClick={() => setOrderSubmitted(true)}
+                disabled={orderSubmitted}
+                className="flex-1 bg-primary text-primary-foreground rounded-2xl font-bold text-base active:enabled:scale-95 transition-transform disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                style={{ height: 52, opacity: orderSubmitted ? 0.75 : 1 }}
               >
-                ثبت سفارش
+                {orderSubmitted && <Check size={16} />}
+                {orderSubmitted ? "سفارش شما ثبت شد" : "ثبت سفارش"}
               </button>
             </div>
           </div>
