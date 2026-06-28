@@ -1,0 +1,16 @@
+{
+  "name": "Torreh",
+  "short_name": "Torreh",
+  "description": "سیستم ثبت سفارش تره",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#E8943A",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
