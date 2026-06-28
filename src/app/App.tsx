@@ -297,6 +297,7 @@ export default function App() {
   const [selectedBranch, setSelectedBranch] = useState("چیتگر");
   const [notes, setNotes] = useState("");
   const [copySucceeded, setCopySucceeded] = useState(false);
+  const [notesDeleteConfirm, setNotesDeleteConfirm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [clearConfirm, setClearConfirm] = useState(false);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
@@ -488,6 +489,7 @@ export default function App() {
     setSelectedBranch("چیتگر");
     setNotes("");
     setCopySucceeded(false);
+    setNotesDeleteConfirm(false);
   }
 
   function getItemQuantityLabel(item: MenuItem) {
@@ -663,8 +665,9 @@ export default function App() {
         </div>
 
         <div className="max-w-md mx-auto w-full px-4 py-5 flex-1">
-          <div className="bg-card rounded-2xl border border-border overflow-visible">
-            <div className="p-4">
+          <div className="space-y-3">
+            <div className="bg-card rounded-2xl border border-border overflow-visible">
+            <div className="p-4" style={{ background: "rgba(255,255,255,0.01)" }}>
               <div className="flex items-start justify-between gap-4">
                 <span className="text-sm font-bold text-foreground pt-2">شعبه</span>
                 <details className="relative z-30 group group-open:mb-32">
@@ -721,6 +724,7 @@ export default function App() {
 
             <details
               className="border-t border-border p-4 group"
+              style={{ background: "rgba(255,255,255,0.01)" }}
               onBlur={(e) => {
                 const nextTarget = e.relatedTarget;
                 if (nextTarget instanceof Node && e.currentTarget.contains(nextTarget)) return;
@@ -732,18 +736,12 @@ export default function App() {
               }}
             >
               <summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-bold text-foreground">توضیحات</span>
-                    {!notes.trim() && (
-                      <span className="text-sm font-medium text-primary group-open:hidden">
-                        افزودن توضیحات
-                      </span>
-                    )}
-                  </div>
-
-                  {notes.trim() && (
-                    <div className="space-y-3 group-open:hidden">
+                {notes.trim() ? (
+                  <div className="space-y-3 group-open:hidden">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-bold text-foreground">توضیحات</span>
+                    </div>
+                    <div className="space-y-3">
                       <p className="text-sm text-foreground whitespace-pre-wrap leading-6">{notes.trim()}</p>
                       <div className="flex items-center justify-end gap-2">
                         <button
@@ -764,9 +762,7 @@ export default function App() {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            if (window.confirm("آیا از حذف توضیحات مطمئن هستید؟")) {
-                              setNotes("");
-                            }
+                            setNotesDeleteConfirm(true);
                           }}
                           className="text-destructive active:scale-90 transition-transform flex items-center justify-center"
                           style={{ width: 34, height: 34 }}
@@ -776,8 +772,12 @@ export default function App() {
                         </button>
                       </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <span className="text-sm font-medium text-primary group-open:hidden">
+                    ➕ افزودن توضیحات
+                  </span>
+                )}
               </summary>
 
               <form
@@ -815,16 +815,15 @@ export default function App() {
                 </div>
               </form>
             </details>
-
-            <div className="border-t border-border px-4 py-3">
-              <button
-                onClick={handleCopyReview}
-                className="text-sm font-semibold text-primary active:opacity-60 transition-opacity flex items-center justify-start gap-2"
-              >
-                {copySucceeded ? <Check size={16} /> : <Copy size={16} />}
-                کپی سفارش
-              </button>
             </div>
+
+            <button
+              onClick={handleCopyReview}
+              className="px-4 text-sm font-semibold text-primary active:opacity-60 transition-opacity flex items-center justify-start gap-2"
+            >
+              {copySucceeded ? <Check size={16} /> : <Copy size={16} />}
+              کپی سفارش
+            </button>
           </div>
         </div>
 
@@ -853,6 +852,45 @@ export default function App() {
             </div>
           </div>
         </div>
+
+        {notesDeleteConfirm && (
+          <div
+            className="fixed inset-0 z-50 flex items-end justify-center"
+            style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+            onClick={() => setNotesDeleteConfirm(false)}
+          >
+            <div
+              dir="rtl"
+              className="bg-card border border-border rounded-3xl w-full max-w-md mx-4 mb-8 p-6 space-y-4"
+              style={{ fontFamily: "'Vazirmatn', sans-serif", boxShadow: "0 -8px 40px rgba(0,0,0,0.6)" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center space-y-1">
+                <p className="text-base font-bold text-foreground">حذف توضیحات</p>
+                <p className="text-sm text-muted-foreground">آیا از حذف توضیحات مطمئن هستید؟</p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setNotesDeleteConfirm(false)}
+                  className="flex-1 bg-secondary text-foreground rounded-2xl font-semibold text-sm active:scale-95 transition-transform"
+                  style={{ height: 48 }}
+                >
+                  انصراف
+                </button>
+                <button
+                  onClick={() => {
+                    setNotes("");
+                    setNotesDeleteConfirm(false);
+                  }}
+                  className="flex-1 bg-destructive text-destructive-foreground rounded-2xl font-semibold text-sm active:scale-95 transition-transform"
+                  style={{ height: 48 }}
+                >
+                  حذف
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
