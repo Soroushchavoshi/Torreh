@@ -663,18 +663,37 @@ export default function App() {
         </div>
 
         <div className="max-w-md mx-auto w-full px-4 py-5 flex-1">
-          <div className="space-y-4">
-            <select
-              value={selectedBranch}
-              onChange={(e) => setSelectedBranch(e.target.value)}
-              className="w-full bg-secondary text-foreground text-sm rounded-xl outline-none border border-border focus:border-primary/40 transition-colors"
-              style={{ height: 44, paddingInline: 14 }}
-              aria-label="انتخاب شعبه"
-            >
-              <option value="چیتگر">چیتگر</option>
-              <option value="پامچال">پامچال</option>
-              <option value="کوهک">کوهک</option>
-            </select>
+          <div className="space-y-3">
+            <details className="relative group">
+              <summary
+                className="list-none bg-card border border-border rounded-2xl px-4 py-3 cursor-pointer active:opacity-70 transition-opacity flex items-center justify-between gap-3 [&::-webkit-details-marker]:hidden"
+                aria-label="انتخاب شعبه"
+              >
+                <div className="space-y-0.5">
+                  <span className="block text-xs font-medium text-muted-foreground">انتخاب شعبه</span>
+                  <span className="block text-sm font-semibold text-foreground">{selectedBranch}</span>
+                </div>
+                <ChevronDown
+                  size={16}
+                  className="text-muted-foreground transition-transform group-open:rotate-180"
+                />
+              </summary>
+              <div className="absolute z-20 mt-2 w-full bg-card border border-border rounded-2xl overflow-hidden shadow-lg">
+                {["چیتگر", "پامچال", "کوهک"].map((branch) => (
+                  <button
+                    key={branch}
+                    type="button"
+                    onClick={(e) => {
+                      setSelectedBranch(branch);
+                      e.currentTarget.closest("details")?.removeAttribute("open");
+                    }}
+                    className="w-full px-4 py-3 text-right text-sm font-medium text-foreground active:bg-secondary transition-colors border-b border-border last:border-b-0"
+                  >
+                    {branch}
+                  </button>
+                ))}
+              </div>
+            </details>
 
             <div className="bg-card rounded-2xl border border-border overflow-hidden">
               <div
@@ -700,20 +719,47 @@ export default function App() {
             <details className="bg-card rounded-2xl border border-border p-4 group">
               <summary className="list-none cursor-pointer group-open:hidden [&::-webkit-details-marker]:hidden">
                 {notes.trim() ? (
-                  <div className="space-y-2">
-                    <p className="text-sm text-foreground whitespace-pre-wrap">{notes.trim()}</p>
-                    <span className="text-sm font-semibold text-primary">ویرایش توضیحات</span>
+                  <div className="space-y-3">
+                    <p className="text-sm text-foreground whitespace-pre-wrap leading-6">{notes.trim()}</p>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.currentTarget.closest("details")?.setAttribute("open", "");
+                        }}
+                        className="text-primary active:scale-90 transition-transform flex items-center justify-center"
+                        style={{ width: 34, height: 34 }}
+                        aria-label="ویرایش توضیحات"
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setNotes("");
+                        }}
+                        className="text-destructive active:scale-90 transition-transform flex items-center justify-center"
+                        style={{ width: 34, height: 34 }}
+                        aria-label="حذف توضیحات"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </div>
                 ) : (
-                  <span className="text-sm font-semibold text-primary">+ افزودن توضیحات</span>
+                  <span className="text-sm font-medium text-primary">افزودن توضیحات</span>
                 )}
               </summary>
               <form
-                className="hidden group-open:block space-y-2"
+                className="hidden group-open:block space-y-3"
                 onSubmit={(e) => {
                   e.preventDefault();
                   const formData = new FormData(e.currentTarget);
-                  setNotes(String(formData.get("notes") ?? ""));
+                  const nextNotes = String(formData.get("notes") ?? "").trim();
+                  if (!nextNotes) return;
+                  setNotes(nextNotes);
                   e.currentTarget.closest("details")?.removeAttribute("open");
                 }}
               >
@@ -722,16 +768,23 @@ export default function App() {
                   name="notes"
                   defaultValue={notes}
                   rows={4}
-                  placeholder="افزودن توضیحات"
+                  placeholder="توضیحات..."
+                  onInput={(e) => {
+                    const button = e.currentTarget.form?.querySelector<HTMLButtonElement>("button[type='submit']");
+                    if (button) button.disabled = !e.currentTarget.value.trim();
+                  }}
                   className="w-full bg-secondary text-foreground text-sm rounded-xl outline-none placeholder:text-muted-foreground border border-transparent focus:border-primary/40 transition-colors resize-none"
                   style={{ padding: 14, caretColor: "#e8943a" }}
                 />
-                <button
-                  type="submit"
-                  className="text-sm font-semibold text-primary active:opacity-60 transition-opacity"
-                >
-                  ذخیره توضیحات
-                </button>
+                <div className="flex justify-start">
+                  <button
+                    type="submit"
+                    disabled={!notes.trim()}
+                    className="text-sm font-semibold text-primary active:opacity-60 transition-opacity disabled:opacity-35 disabled:cursor-not-allowed"
+                  >
+                    ذخیره توضیحات
+                  </button>
+                </div>
               </form>
             </details>
 
@@ -753,7 +806,7 @@ export default function App() {
             <div className="flex gap-3">
               <button
                 onClick={() => setOrderPlaced(false)}
-                className="flex-1 bg-secondary text-primary rounded-2xl font-bold text-base active:scale-95 transition-transform"
+                className="flex-1 bg-secondary text-primary rounded-2xl font-medium text-base active:scale-95 transition-transform"
                 style={{ height: 52 }}
               >
                 بازگشت
@@ -764,8 +817,8 @@ export default function App() {
                 className="flex-1 bg-primary text-primary-foreground rounded-2xl font-bold text-base active:enabled:scale-95 transition-transform disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 style={{ height: 52, opacity: orderSubmitted ? 0.75 : 1 }}
               >
-                {orderSubmitted && <Check size={16} />}
                 {orderSubmitted ? "سفارش شما ثبت شد" : "ثبت سفارش"}
+                {orderSubmitted && <Check size={16} />}
               </button>
             </div>
           </div>
