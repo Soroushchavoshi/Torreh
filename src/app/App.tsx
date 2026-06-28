@@ -488,6 +488,7 @@ export default function App() {
       "| آیتم | مقدار |",
       "| --- | --- |",
       ...menuOrderItems.map((item) => `| ${item.name} | ${getItemQuantityLabel(item)} |`),
+      ...(notes.trim() ? ["", "توضیحات:", "", notes.trim()] : []),
     ].join("\n");
 
     try {
@@ -674,21 +675,18 @@ export default function App() {
                   <span className="text-sm font-bold text-primary">{getItemQuantityLabel(item)}</span>
                 </div>
               ))}
-
-              {notes.trim() && (
-                <div
-                  className="flex items-start px-4 py-3 border-b border-border last:border-b-0"
-                  style={{ background: menuOrderItems.length % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)" }}
-                >
-                  <span className="flex-1 text-sm font-medium text-foreground">توضیحات</span>
-                  <span className="text-sm font-bold text-primary whitespace-pre-wrap text-left">{notes.trim()}</span>
-                </div>
-              )}
             </div>
 
-            <details className="px-4 group">
-              <summary className="list-none text-sm font-semibold text-primary active:opacity-60 transition-opacity cursor-pointer group-open:hidden [&::-webkit-details-marker]:hidden">
-                {notes.trim() ? "ویرایش توضیحات" : "➕ افزودن توضیحات"}
+            <details className="bg-card rounded-2xl border border-border p-4 group">
+              <summary className="list-none cursor-pointer group-open:hidden [&::-webkit-details-marker]:hidden">
+                {notes.trim() ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-foreground whitespace-pre-wrap">{notes.trim()}</p>
+                    <span className="text-sm font-semibold text-primary">ویرایش توضیحات</span>
+                  </div>
+                ) : (
+                  <span className="text-sm font-semibold text-primary">+ افزودن توضیحات</span>
+                )}
               </summary>
               <form
                 className="hidden group-open:block space-y-2"
