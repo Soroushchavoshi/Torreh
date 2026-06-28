@@ -663,39 +663,42 @@ export default function App() {
         </div>
 
         <div className="max-w-md mx-auto w-full px-4 py-5 flex-1">
-          <div className="space-y-3">
-            <details className="relative group">
-              <summary
-                className="list-none bg-card border border-border rounded-2xl px-4 py-3 cursor-pointer active:opacity-70 transition-opacity flex items-center justify-between gap-3 [&::-webkit-details-marker]:hidden"
-                aria-label="انتخاب شعبه"
-              >
-                <div className="space-y-0.5">
-                  <span className="block text-xs font-medium text-muted-foreground">انتخاب شعبه</span>
-                  <span className="block text-sm font-semibold text-foreground">{selectedBranch}</span>
-                </div>
-                <ChevronDown
-                  size={16}
-                  className="text-muted-foreground transition-transform group-open:rotate-180"
-                />
-              </summary>
-              <div className="absolute z-20 mt-2 w-full bg-card border border-border rounded-2xl overflow-hidden shadow-lg">
-                {["چیتگر", "پامچال", "کوهک"].map((branch) => (
-                  <button
-                    key={branch}
-                    type="button"
-                    onClick={(e) => {
-                      setSelectedBranch(branch);
-                      e.currentTarget.closest("details")?.removeAttribute("open");
-                    }}
-                    className="w-full px-4 py-3 text-right text-sm font-medium text-foreground active:bg-secondary transition-colors border-b border-border last:border-b-0"
+          <div className="bg-card rounded-2xl border border-border overflow-visible">
+            <div className="p-4">
+              <div className="flex items-start justify-between gap-4">
+                <span className="text-sm font-bold text-foreground pt-2">شعبه</span>
+                <details className="relative z-30 group group-open:mb-32">
+                  <summary
+                    className="list-none bg-secondary border border-border rounded-xl px-3 py-2 cursor-pointer active:opacity-70 transition-opacity flex items-center justify-between gap-3 [&::-webkit-details-marker]:hidden"
+                    style={{ minWidth: 128 }}
+                    aria-label="انتخاب شعبه"
                   >
-                    {branch}
-                  </button>
-                ))}
+                    <span className="text-sm font-semibold text-foreground">{selectedBranch}</span>
+                    <ChevronDown
+                      size={15}
+                      className="text-muted-foreground transition-transform group-open:rotate-180"
+                    />
+                  </summary>
+                  <div className="absolute top-full left-0 z-40 mt-2 w-full bg-card border border-border rounded-xl overflow-hidden shadow-lg">
+                    {["چیتگر", "پامچال", "کوهک"].map((branch) => (
+                      <button
+                        key={branch}
+                        type="button"
+                        onClick={(e) => {
+                          setSelectedBranch(branch);
+                          e.currentTarget.closest("details")?.removeAttribute("open");
+                        }}
+                        className="w-full px-3 py-2.5 text-right text-sm font-medium text-foreground active:bg-secondary transition-colors border-b border-border last:border-b-0"
+                      >
+                        {branch}
+                      </button>
+                    ))}
+                  </div>
+                </details>
               </div>
-            </details>
+            </div>
 
-            <div className="bg-card rounded-2xl border border-border overflow-hidden">
+            <div className="border-t border-border overflow-hidden">
               <div
                 className="flex items-center border-b border-border px-4 py-2.5"
                 style={{ background: "rgba(232,148,58,0.06)" }}
@@ -716,42 +719,67 @@ export default function App() {
               ))}
             </div>
 
-            <details className="bg-card rounded-2xl border border-border p-4 group">
-              <summary className="list-none cursor-pointer group-open:hidden [&::-webkit-details-marker]:hidden">
-                {notes.trim() ? (
-                  <div className="space-y-3">
-                    <p className="text-sm text-foreground whitespace-pre-wrap leading-6">{notes.trim()}</p>
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.currentTarget.closest("details")?.setAttribute("open", "");
-                        }}
-                        className="text-primary active:scale-90 transition-transform flex items-center justify-center"
-                        style={{ width: 34, height: 34 }}
-                        aria-label="ویرایش توضیحات"
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setNotes("");
-                        }}
-                        className="text-destructive active:scale-90 transition-transform flex items-center justify-center"
-                        style={{ width: 34, height: 34 }}
-                        aria-label="حذف توضیحات"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
+            <details
+              className="border-t border-border p-4 group"
+              onBlur={(e) => {
+                const nextTarget = e.relatedTarget;
+                if (nextTarget instanceof Node && e.currentTarget.contains(nextTarget)) return;
+
+                const textarea = e.currentTarget.querySelector("textarea");
+                if (!notes.trim() && !textarea?.value.trim()) {
+                  e.currentTarget.removeAttribute("open");
+                }
+              }}
+            >
+              <summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-bold text-foreground">توضیحات</span>
+                    {!notes.trim() && (
+                      <span className="text-sm font-medium text-primary group-open:hidden">
+                        افزودن توضیحات
+                      </span>
+                    )}
                   </div>
-                ) : (
-                  <span className="text-sm font-medium text-primary">افزودن توضیحات</span>
-                )}
+
+                  {notes.trim() && (
+                    <div className="space-y-3 group-open:hidden">
+                      <p className="text-sm text-foreground whitespace-pre-wrap leading-6">{notes.trim()}</p>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.currentTarget.closest("details")?.setAttribute("open", "");
+                          }}
+                          className="text-primary active:scale-90 transition-transform flex items-center justify-center"
+                          style={{ width: 34, height: 34 }}
+                          aria-label="ویرایش توضیحات"
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (window.confirm("آیا از حذف توضیحات مطمئن هستید؟")) {
+                              setNotes("");
+                            }
+                          }}
+                          className="text-destructive active:scale-90 transition-transform flex items-center justify-center"
+                          style={{ width: 34, height: 34 }}
+                          aria-label="حذف توضیحات"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </summary>
+
               <form
                 className="hidden group-open:block space-y-3"
                 onSubmit={(e) => {
@@ -788,13 +816,15 @@ export default function App() {
               </form>
             </details>
 
-            <button
-              onClick={handleCopyReview}
-              className="w-full px-4 text-right text-sm font-semibold text-primary active:opacity-60 transition-opacity flex items-center justify-start gap-2"
-            >
-              {copySucceeded ? <Check size={16} /> : <Copy size={16} />}
-              {copySucceeded ? "کپی شد" : "کپی سفارش"}
-            </button>
+            <div className="border-t border-border px-4 py-3">
+              <button
+                onClick={handleCopyReview}
+                className="text-sm font-semibold text-primary active:opacity-60 transition-opacity flex items-center justify-start gap-2"
+              >
+                {copySucceeded ? <Check size={16} /> : <Copy size={16} />}
+                کپی سفارش
+              </button>
+            </div>
           </div>
         </div>
 
